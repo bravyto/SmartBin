@@ -3,6 +3,11 @@ package com.mmcrajawali.smartbin;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -70,7 +75,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private UserLoginTask mAuthTask = null;
 
     // UI references.
-    private AutoCompleteTextView mEmailView;
+    private EditText mEmailView;
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
@@ -80,7 +85,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
-        mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
+        mEmailView = (EditText) findViewById(R.id.username);
         populateAutoComplete();
 
         mPasswordView = (EditText) findViewById(R.id.password);
@@ -95,7 +100,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        Button mEmailSignInButton = (Button) findViewById(R.id.sign_in_button);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -104,7 +109,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         });
 
         mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
+//        mProgressView = findViewById(R.id.login_progress);
     }
 
     private void populateAutoComplete() {
@@ -229,18 +234,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 }
             });
 
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mProgressView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
+//            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+//            mProgressView.animate().setDuration(shortAnimTime).alpha(
+//                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+//                @Override
+//                public void onAnimationEnd(Animator animation) {
+//                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+//                }
+//            });
         } else {
             // The ViewPropertyAnimator APIs are not available, so simply show
             // and hide the relevant UI components.
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+//            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
             mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
     }
@@ -285,7 +290,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 new ArrayAdapter<>(LoginActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
-        mEmailView.setAdapter(adapter);
+//        mEmailView.setAdapter(adapter);
     }
 
 
@@ -314,36 +319,77 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mPassword = password;
         }
 
+        private Exception exception;
+        private ProgressDialog progressDialog = new ProgressDialog(LoginActivity.this);
+        InputStream inputStream = null;
+        String result = "";
+
+        protected void onPreExecute() {
+            progressDialog.setMessage("Logging in...");
+            progressDialog.show();
+            progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                public void onCancel(DialogInterface arg0) {
+                    UserLoginTask.this.cancel(true);
+                }
+            });
+        }
+
         @Override
         protected String doInBackground(Void... params) {
-            String urlString = "http://mmcrajawali.com/login.php?username=" + mEmail + "&password=" + mPassword;
+//            String urlString = "http://mmcrajawali.com/login.php?username=" + mEmail + "&password=" + mPassword;
+            String urlString = "http://mmcrajawali.com/smartbin/public/login?username=" + mEmail + "&password=" + mPassword;
 //            String urlString = "https://maps.googleapis.com/maps/api/directions/json?origin=-6.366026,106.8279491&destination=-6.402457,106.8300367&sensor=false&mode=driving&alternatives=true&key=AIzaSyDjkNXLI4j-k4ZhdSA3WkHxLUyXagm5aH8";
             JSONParser jParser = new JSONParser();
             String json = jParser.getJSONFromUrl(urlString);
             return json;
         }
 
+        public String stripHtml(String html) {
+            return Html.fromHtml(html).toString();
+        }
+
         @Override
         protected void onPostExecute(final String success) {
             mAuthTask = null;
             showProgress(false);
-            Log.e("asdf", success);
             final JSONObject json;
+            String status = null, role = null, id = null, name = null, truck_name = null, truck_number = null;
             try {
-                json = new JSONObject(success);
-                String encodedString = json.getString("routes");
-                Log.e("statusnya", encodedString);
+                json = new JSONObject(stripHtml(success));
+                String encodedString = json.getString("status");
+                status = encodedString;
+                Log.e("statusnya", status);
+                encodedString = json.getString("role");
+                role = encodedString;
+                Log.e("rolenya", role);
+                if(role.equals("supir_truk")) {
+                    encodedString = json.getString("id_user");
+                    id = encodedString;
+                    encodedString = json.getString("name");
+                    name = encodedString;
+                    encodedString = json.getString("nama_truk");
+                    truck_name = encodedString;
+                    encodedString = json.getString("nomor_truk");
+                    truck_number = encodedString;
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
-            Log.e("aduh", "kenape");
-
-            if (!success.isEmpty()) {
-                //finish();
+            if (status.equals("sukses") && role.equals("supir_truk")) {
+                SharedPreferences sharedPref = LoginActivity.this.getPreferences(Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString("id", id);
+                editor.putString("name", name);
+                editor.putString("truck_name", truck_name);
+                editor.putString("truck_number", truck_number);
+                editor.commit();
+                Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
+                startActivity(myIntent);
             } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
-                mPasswordView.requestFocus();
+                progressDialog.cancel();
+                mEmailView.setError("This username or password is incorrect");
+                mEmailView.requestFocus();
             }
         }
 
