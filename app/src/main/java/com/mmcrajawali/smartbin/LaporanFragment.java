@@ -9,9 +9,9 @@ import android.view.ViewGroup;
 /**
  * Created by Bambang on 6/16/2016.
  */
-public class TwoFragment extends Fragment {
+public class LaporanFragment extends Fragment {
 
-    public TwoFragment() {
+    public LaporanFragment() {
         // Required empty public constructor
     }
 
