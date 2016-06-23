@@ -336,8 +336,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         @Override
         protected String doInBackground(Void... params) {
-//            String urlString = "http://mmcrajawali.com/login.php?username=" + mEmail + "&password=" + mPassword;
-            String urlString = "http://mmcrajawali.com/smartbin/public/login?username=" + mEmail + "&password=" + mPassword;
+            String urlString = "http://mmcrajawali.com/login.php?username=" + mEmail + "&password=" + mPassword;
+//            String urlString = "http://mmcrajawali.com/smartbin/public/login?username=" + mEmail + "&password=" + mPassword;
+//            String urlString = "http://mmcrajawali.com/smartbin/public/loginapi?username=" + mEmail + "&password=" + mPassword;
 //            String urlString = "https://maps.googleapis.com/maps/api/directions/json?origin=-6.366026,106.8279491&destination=-6.402457,106.8300367&sensor=false&mode=driving&alternatives=true&key=AIzaSyDjkNXLI4j-k4ZhdSA3WkHxLUyXagm5aH8";
             JSONParser jParser = new JSONParser();
             String json = jParser.getJSONFromUrl(urlString);
@@ -356,6 +357,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             String status = null, role = null, id = null, name = null, truck_name = null, truck_number = null;
             try {
                 json = new JSONObject(stripHtml(success));
+                Log.e("statusnya", success);
                 String encodedString = json.getString("status");
                 status = encodedString;
                 Log.e("statusnya", status);
