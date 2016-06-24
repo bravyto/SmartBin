@@ -26,6 +26,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -119,9 +120,11 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         // Add a marker in Sydney and move the camera
-//        LatLng sydney = new LatLng(-34, 151);
-//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        //dummy local
+        LatLng TPS1 = new LatLng(-6.402457, 106.8300367);
+        LatLng TPA = new LatLng(-6.502457, 106.8300367);
+        mMap.addMarker(new MarkerOptions().position(TPS1).title("TPS 1"));
+        mMap.addMarker(new MarkerOptions().position(TPA).title("TPA"));
     }
 
     public String makeURL (double sourcelat, double sourcelog, double destlat, double destlog ){
