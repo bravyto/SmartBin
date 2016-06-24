@@ -9,8 +9,10 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -25,6 +27,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -44,6 +47,8 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private int locator;
+    private boolean autoRecenter;
+    private CameraPosition autoCameraLastPos;
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
 
     public TugasFragment() {
@@ -61,6 +66,7 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_one, null, false);
         locator = 0;
+        autoRecenter = true;
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) this.getChildFragmentManager()
                 .findFragmentById(R.id.map);
@@ -68,13 +74,7 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
         setUpMapIfNeeded();
         //pake iterasi buat datengin setiap poin
         //sebelum diiterasi pake djikstra dulu buat ngurutin mana yang didatengin duluan
-        String urlnya = makeURL(-6.366026,106.8279491, -6.402457, 106.8300367);
-        String urlnya1 = makeURL(-6.402457,106.8300367, -6.502457, 106.8300367);
-        AsyncTask blabla = new connectAsyncTask(urlnya);
-        AsyncTask blabla1 = new connectAsyncTask(urlnya1);
-        Object[] arg = new String[]{null,null,null};
-        blabla.execute(arg);
-        blabla1.execute(arg);
+
         return view;
     }
 
@@ -85,18 +85,51 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
             mMap = ((SupportMapFragment) this.getChildFragmentManager().findFragmentById(R.id.map))
                     .getMap();
             mMap.setMyLocationEnabled(true);
+
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
+                mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+                    @Override
+                    public boolean onMyLocationButtonClick() {
+                        Location location = mMap.getMyLocation();
+                        LatLng myPosition = new LatLng(location.getLatitude(), location.getLongitude());
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(myPosition.latitude, myPosition.longitude), 17.0f));
+//                        autoCameraLastPos = mMap.getCameraPosition();
+                        autoRecenter = true;
+                        return true;
+                    }
+                });
+
+//                mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
+//                    @Override
+//                    public void onCameraChange(CameraPosition cameraPosition) {
+//                        if (locator != 0)
+//                            if(cameraPosition != autoCameraLastPos)
+//                                autoRecenter = false;
+//                    }
+//                });
+
+
                 mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
 
                     @Override
                     public void onMyLocationChange(Location arg0) {
                         // TODO Auto-generated method stub
                         //send position to website
+                        LatLng myPosition = new LatLng(arg0.getLatitude(), arg0.getLongitude());
+                        if(autoRecenter) {
+//                          mMap.addMarker(new MarkerOptions().position(myPosition).title("It's Me!"));
+                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(myPosition.latitude, myPosition.longitude), 17.0f));
+//                            autoCameraLastPos = mMap.getCameraPosition();
+                        }
                         if (locator == 0) {
-                            LatLng myPosition = new LatLng(arg0.getLatitude(), arg0.getLongitude());
-//                        mMap.addMarker(new MarkerOptions().position(myPosition).title("It's Me!"));
-                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(myPosition.latitude, myPosition.longitude), 15.0f));
+                            String urlnya = makeURL(myPosition.latitude, myPosition.longitude, -6.402457, 106.8300367);
+                            String urlnya1 = makeURL(-6.402457, 106.8300367, -6.502457, 106.8300367);
+                            AsyncTask blabla = new connectAsyncTask(urlnya);
+                            AsyncTask blabla1 = new connectAsyncTask(urlnya1);
+                            Object[] arg = new String[]{null, null, null};
+                            blabla.execute(arg);
+                            blabla1.execute(arg);
                             locator++;
                         }
                     }
