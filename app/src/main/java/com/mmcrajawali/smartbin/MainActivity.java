@@ -40,6 +40,14 @@ public class MainActivity extends AppCompatActivity {
         tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
 
+        LocationManager_check locationManagerCheck = new LocationManager_check(
+                this);
+
+        if(locationManagerCheck.isLocationServiceAvailable()) {
+
+        }else{
+            locationManagerCheck .createLocationServiceError(MainActivity.this);
+        }
 
     }
 
