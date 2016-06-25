@@ -8,6 +8,9 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -45,6 +48,10 @@ import java.util.List;
  */
 public class TugasFragment extends Fragment implements OnMapReadyCallback {
 
+    private RecyclerView recyclerView;
+    private List<Task> taskList = new ArrayList<>();
+    private TaskAdapter mAdapter;
+
     private GoogleMap mMap;
     private int locator;
     private boolean autoRecenter;
@@ -58,13 +65,25 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mAdapter = new TaskAdapter(taskList);
+        prepareDummyData();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_one, null, false);
+        View view = inflater.inflate(R.layout.fragment_one, container, false);
+
+        //Inisialisasi recyclerview
+        recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
+        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getContext());
+        recyclerView.setLayoutManager(mLayoutManager);
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.setAdapter(mAdapter);
+
+
         locator = 0;
         autoRecenter = true;
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -76,6 +95,13 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
         //sebelum diiterasi pake djikstra dulu buat ngurutin mana yang didatengin duluan
 
         return view;
+    }
+
+    private void prepareDummyData() {
+        for (int i = 0; i < 20; i++) {
+            taskList.add(new Task("Lokasi " + i));
+        }
+        mAdapter.notifyDataSetChanged();
     }
 
     private void setUpMapIfNeeded() {
