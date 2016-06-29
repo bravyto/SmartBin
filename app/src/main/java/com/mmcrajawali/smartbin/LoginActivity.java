@@ -246,7 +246,7 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             if (status.equals("sukses") && role.equals("supir_truk")) {
-                SharedPreferences sharedPref = LoginActivity.this.getPreferences(Context.MODE_PRIVATE);
+                SharedPreferences sharedPref = getSharedPreferences("app data", Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putString("id", id);
                 editor.putString("name", name);
@@ -256,10 +256,10 @@ public class LoginActivity extends AppCompatActivity {
                 Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(myIntent);
             } else {
-                progressDialog.cancel();
                 mEmailView.setError("This username or password is incorrect");
                 mEmailView.requestFocus();
             }
+            progressDialog.cancel();
         }
 
         @Override

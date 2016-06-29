@@ -1,15 +1,20 @@
 package com.mmcrajawali.smartbin;
 
 import android.os.Bundle;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Toolbar toolbar;
     private TabLayout tabLayout;
+    private TugasFragment tugasFragment;
     private com.mmcrajawali.smartbin.CustomViewPager viewPager;
 
     @Override
@@ -31,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         toolbar = (Toolbar) findViewById(R.id.toolbar);
+        AppBarLayout.LayoutParams params = (AppBarLayout.LayoutParams) toolbar.getLayoutParams();
+        params.setScrollFlags(0);  // clear all scroll flags
         setSupportActionBar(toolbar);
 
         viewPager = (com.mmcrajawali.smartbin.CustomViewPager) findViewById(R.id.viewpager);
@@ -57,12 +65,26 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         MenuItem item = menu.findItem(R.id.myswitch);
         item.setActionView(R.layout.switch_layout);
+
+        final SwitchCompat actionView = (SwitchCompat) item.getActionView().findViewById(R.id.switchForActionBar);
+
+        actionView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked) {
+                    tugasFragment.activateTaskInFragment();
+                    actionView.setClickable(false);
+                }
+            }
+        });
         return true;
     }
 
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new TugasFragment(), "Tugas");
+        tugasFragment = new TugasFragment();
+        adapter.addFragment(tugasFragment, "Tugas");
         adapter.addFragment(new LaporanFragment(), "Laporan");
         adapter.addFragment(new PeraturanFragment(), "Peraturan");
         viewPager.setAdapter(adapter);

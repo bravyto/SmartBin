@@ -2,20 +2,30 @@ package com.mmcrajawali.smartbin;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Html;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
+import android.widget.Switch;
+import android.widget.TextView;
 
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -40,6 +50,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,23 +62,45 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
     private RecyclerView recyclerView;
     private List<Task> taskList = new ArrayList<>();
     private TaskAdapter mAdapter;
+    private ArrayList name, latitude, longitude;
+    private Switch fullSwitch;
+    private RecyclerView.LayoutManager mLayoutManager;
+
+    private ArrayList<Polyline> polylinesnya = new ArrayList<Polyline>();
 
     private GoogleMap mMap;
     private int locator;
-    private boolean autoRecenter;
-    private CameraPosition autoCameraLastPos;
+    private boolean autoRecenter;;
+    private boolean mapTouched;
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
+
+    public int routeCounter;
+
+    private Polyline line = null;
 
     public TugasFragment() {
         // Required empty public constructor
     }
 
+    public void activateTaskInFragment() {
+        Location location = mMap.getMyLocation();
+        name.add("My Position");
+        latitude.add(location.getLatitude() + "");
+        longitude.add(location.getLongitude() + "");
+        SharedPreferences sharedPref= getActivity().getSharedPreferences("app data", Context.MODE_PRIVATE);
+        AsyncTask activateTask = new ActivateTask(sharedPref.getString("id", ""));
+        Void[] param = null;
+        activateTask.execute(param);
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        mAdapter = new TaskAdapter(taskList);
-        prepareDummyData();
+        name = new ArrayList();
+        latitude = new ArrayList();
+        longitude = new ArrayList();
+        routeCounter = 0;
+//        prepareDummyData();
     }
 
     @Override
@@ -76,12 +109,15 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_one, container, false);
 
+        mapTouched = false;
+        mAdapter = new TaskAdapter(taskList);
         //Inisialisasi recyclerview
         recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
-        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getContext());
+        mLayoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(mAdapter);
+
 
 
         locator = 0;
@@ -94,15 +130,47 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
         //pake iterasi buat datengin setiap poin
         //sebelum diiterasi pake djikstra dulu buat ngurutin mana yang didatengin duluan
 
+        View mapTouchLayer = view.findViewById(R.id.map_touch_layer);
+        mapTouchLayer.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                mapTouched = true;
+                autoRecenter = false;
+                return false; // Pass on the touch to the map or shadow layer.
+            }
+        });
+
+        fullSwitch = (Switch) view.findViewById(R.id.switch2);
+        fullSwitch.setVisibility(View.GONE);
+
+        fullSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked) {
+                    for (int i = 0; i < polylinesnya.size(); i++) {
+                        polylinesnya.get(i).remove();
+                    }
+                    polylinesnya.clear();
+                    Location location = mMap.getMyLocation();
+                    String urlnya = makeURL(location.getLatitude(), location.getLongitude(), Double.parseDouble((String) latitude.get(latitude.size() - 1)), Double.parseDouble((String) longitude.get(longitude.size() - 1)));
+                    AsyncTask blabla = new connectAsyncTask(urlnya);
+                    Object[] arg = new String[]{null, null, null};
+                    blabla.execute(arg);
+                    fullSwitch.setClickable(false);
+                    mAdapter.setTaskClickable(false);
+                }
+            }
+        });
+
         return view;
     }
 
-    private void prepareDummyData() {
-        for (int i = 0; i < 20; i++) {
-            taskList.add(new Task("Lokasi " + i));
-        }
-        mAdapter.notifyDataSetChanged();
-    }
+//    private void prepareDummyData() {
+//        for (int i = 0; i < 20; i++) {
+//            taskList.add(new Task("Lokasi " + i));
+//        }
+//        mAdapter.notifyDataSetChanged();
+//    }
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
@@ -119,22 +187,12 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
                     public boolean onMyLocationButtonClick() {
                         Location location = mMap.getMyLocation();
                         LatLng myPosition = new LatLng(location.getLatitude(), location.getLongitude());
+
                         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(myPosition.latitude, myPosition.longitude), 17.0f));
-//                        autoCameraLastPos = mMap.getCameraPosition();
                         autoRecenter = true;
                         return true;
                     }
                 });
-
-//                mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
-//                    @Override
-//                    public void onCameraChange(CameraPosition cameraPosition) {
-//                        if (locator != 0)
-//                            if(cameraPosition != autoCameraLastPos)
-//                                autoRecenter = false;
-//                    }
-//                });
-
 
                 mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
 
@@ -146,18 +204,11 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
                         if(autoRecenter) {
 //                          mMap.addMarker(new MarkerOptions().position(myPosition).title("It's Me!"));
                             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(myPosition.latitude, myPosition.longitude), 17.0f));
-//                            autoCameraLastPos = mMap.getCameraPosition();
                         }
-                        if (locator == 0) {
-                            String urlnya = makeURL(myPosition.latitude, myPosition.longitude, -6.402457, 106.8300367);
-                            String urlnya1 = makeURL(-6.402457, 106.8300367, -6.502457, 106.8300367);
-                            AsyncTask blabla = new connectAsyncTask(urlnya);
-                            AsyncTask blabla1 = new connectAsyncTask(urlnya1);
-                            Object[] arg = new String[]{null, null, null};
-                            blabla.execute(arg);
-                            blabla1.execute(arg);
-                            locator++;
-                        }
+                        SharedPreferences sharedPref= getActivity().getSharedPreferences("app data", Context.MODE_PRIVATE);
+                        AsyncTask updatePos = new UpdateTask(sharedPref.getString("id", ""),arg0.getLatitude()+"",arg0.getLongitude()+"");
+                        Void[] param = null;
+                        updatePos.execute(param);
                     }
                 });
 
@@ -180,15 +231,12 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
         mMap = googleMap;
         // Add a marker in Sydney and move the camera
         //dummy local
-        LatLng TPS1 = new LatLng(-6.402457, 106.8300367);
-        LatLng TPA = new LatLng(-6.502457, 106.8300367);
-        mMap.addMarker(new MarkerOptions().position(TPS1).title("TPS 1"));
-        mMap.addMarker(new MarkerOptions().position(TPA).title("TPA"));
     }
 
     public String makeURL (double sourcelat, double sourcelog, double destlat, double destlog ){
         StringBuilder urlString = new StringBuilder();
         urlString.append("https://maps.googleapis.com/maps/api/directions/json");
+        //https://maps.googleapis.com/maps/api/directions/json?origin=Adelaide,SA&destination=Adelaide,SA&waypoints=optimize:true|Barossa+Valley,SA|Clare,SA|Connawarra,SA&sensor=false&mode=driving&alternatives=true&key=AIzaSyDjkNXLI4j-k4ZhdSA3WkHxLUyXagm5aH8
         urlString.append("?origin=");// from
         urlString.append(Double.toString(sourcelat));
         urlString.append(",");
@@ -214,12 +262,14 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
             JSONObject overviewPolylines = routes.getJSONObject("overview_polyline");
             String encodedString = overviewPolylines.getString("points");
             List<LatLng> list = decodePoly(encodedString);
-            Polyline line = mMap.addPolyline(new PolylineOptions()
+            line = mMap.addPolyline(new PolylineOptions()
                             .addAll(list)
                             .width(12)
                             .color(Color.parseColor("#05b1fb"))//Google maps blue color
                             .geodesic(true)
             );
+
+            polylinesnya.add(line);
            /*
            for(int z = 0; z<list.size()-1;z++){
                 LatLng src= list.get(z);
@@ -299,6 +349,244 @@ public class TugasFragment extends Fragment implements OnMapReadyCallback {
             progressDialog.hide();
             if(result!=null){
                 drawPath(result);
+            }
+        }
+    }
+
+    public class ActivateTask extends AsyncTask<Void, Void, String> {
+
+        private final String mUserId;
+        Exception mException = null;
+
+        ActivateTask(String userId) {
+            mUserId = userId;
+        }
+
+        private ProgressDialog progressDialog = new ProgressDialog(getActivity());
+
+        protected void onPreExecute() {
+            progressDialog.setMessage("Activating...");
+            progressDialog.show();
+            progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                public void onCancel(DialogInterface arg0) {
+                    ActivateTask.this.cancel(true);
+                }
+            });
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+            String urlString = "http://mmcrajawali.com/tasks.php?userId=" + mUserId;
+            JSONParser jParser = new JSONParser();
+            String json = jParser.getJSONFromUrl(urlString);
+            return json;
+        }
+
+        public String stripHtml(String html) {
+            return Html.fromHtml(html).toString();
+        }
+
+        @Override
+        protected void onPostExecute(final String success) {
+            try {
+                JSONArray point = new JSONArray(stripHtml(success));
+                String idTPA = null;
+                String namaTPA = null;
+                String latTPA = null;
+                String logTPA = null;
+                SharedPreferences sharedPref= getActivity().getSharedPreferences("app data", Context.MODE_PRIVATE);
+                for (int i = 0; i < point.length(); i++) {
+                    JSONObject e = point.getJSONObject(i);
+                    String role = e.getString("role");
+                    if (role.equals("tpa")) {
+                        idTPA = e.getString("id_tp");
+                        namaTPA = e.getString("name");
+                        latTPA = e.getString("latitude");
+                        logTPA = e.getString("longitude");
+                    } else {
+                        taskList.add(new Task(sharedPref.getString("id", ""), e.getString("id_tp"), e.getString("name"), "tps", Double.parseDouble(e.getString("latitude")), Double.parseDouble(e.getString("longitude"))));
+                        name.add(e.getString("name"));
+                        latitude.add(e.getString("latitude"));
+                        longitude.add(e.getString("longitude"));
+                        LatLng TPS = new LatLng(Double.parseDouble(e.getString("latitude")), Double.parseDouble(e.getString("longitude")));
+                        mMap.addMarker(new MarkerOptions().position(TPS).title(e.getString("name")));
+                    }
+                }
+                taskList.add(new Task(sharedPref.getString("id", ""), idTPA ,namaTPA, "tpa", Double.parseDouble(latTPA), Double.parseDouble(logTPA)));
+                name.add(namaTPA);
+                latitude.add(latTPA);
+                longitude.add(logTPA);
+                mAdapter.notifyDataSetChanged();
+
+                fullSwitch.setVisibility(View.VISIBLE);
+                fullSwitch.setClickable(true);
+                fullSwitch.setChecked(false);
+
+                LatLng TPA = new LatLng(Double.parseDouble(latTPA), Double.parseDouble(logTPA));
+                mMap.addMarker(new MarkerOptions().position(TPA).title(namaTPA));
+
+                for (int j = 0; j < name.size() - 1; j++) {
+                    String urlnya = makeURL(Double.parseDouble((String) latitude.get(j)), Double.parseDouble((String) longitude.get(j)), Double.parseDouble((String) latitude.get(j + 1)), Double.parseDouble((String) longitude.get(j + 1)));
+                    AsyncTask blabla = new connectAsyncTask(urlnya);
+                    Object[] arg = new String[]{null, null, null};
+                    blabla.execute(arg);
+                }
+
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            progressDialog.cancel();
+        }
+
+        @Override
+        protected void onCancelled() {
+        }
+    }
+    public class UpdateTask extends AsyncTask<Void, Void, String> {
+
+        private final String mUserId, mLatitude, mLongitude;
+
+        UpdateTask(String userId, String latitude, String longitude) {
+            mUserId = userId;
+            mLatitude = latitude;
+            mLongitude = longitude;
+        }
+
+        protected void onPreExecute() {
+
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+            String urlString = "http://mmcrajawali.com/updatePosisi.php?userId=" + mUserId + "&latitude=" +mLatitude+"&longitude=" +mLongitude;
+            JSONParser jParser = new JSONParser();
+            String json = jParser.getJSONFromUrl(urlString);
+            return json;
+        }
+
+        @Override
+        protected void onPostExecute(final String success) {
+
+        }
+
+        @Override
+        protected void onCancelled() {
+
+        }
+    }
+
+
+    public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.MyViewHolder> {
+
+        private List<Task> taskListAdapter;
+        private ArrayList<View> row = new ArrayList<View>();
+
+        public class MyViewHolder extends RecyclerView.ViewHolder {
+            public TextView location_name;
+            public CheckBox checkbox;
+
+            public MyViewHolder(View view) {
+                super(view);
+                location_name = (TextView) view.findViewById(R.id.location_name);
+                checkbox = (CheckBox) view.findViewById(R.id.checkBox);
+            }
+        }
+
+        public TaskAdapter(List<Task> taskList) {
+            this.taskListAdapter = taskList;
+        }
+
+        @Override
+        public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View itemView = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.task_list_row, parent, false);
+            row.add(itemView);
+            return new MyViewHolder(itemView);
+        }
+
+        @Override
+        public void onBindViewHolder(MyViewHolder holder, int position) {
+            final Task task = taskListAdapter.get(position);
+            holder.location_name.setText(task.getLocationName());
+            holder.checkbox.setChecked(false);
+            holder.checkbox.setClickable(true);
+            holder.checkbox.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+                    if (((CheckBox) v).isChecked()) {
+                        AsyncTask blabla = new TaskDone(task.getDriver_id(), task.getLocationId());
+                        Void[] param = null;
+                        blabla.execute(param);
+                        ((CheckBox) v).setClickable(false);
+                        if (task.getLocation_type().equals("tpa")) {
+                            taskList.clear();
+                            taskListAdapter.clear();
+                            row.clear();
+                            mAdapter.notifyDataSetChanged();
+                            fullSwitch.setVisibility(View.GONE);
+                            for (int i = 0; i < polylinesnya.size(); i++) {
+                                polylinesnya.get(i).remove();
+                            }
+                            polylinesnya.clear();
+                            name.clear();
+                            latitude.clear();
+                            longitude.clear();
+                        }
+                    }
+                }
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return taskListAdapter.size();
+        }
+
+        public ArrayList<View> getRow() {
+            return row;
+        }
+
+        public void setTaskClickable(boolean order) {
+            for (int i = 0; i < row.size() - 1; i++) {
+                row.get(i).findViewById(R.id.checkBox).setClickable(order);
+            }
+        }
+
+
+        public class TaskDone extends AsyncTask<Void, Void, String> {
+
+            private final String mUserId;
+            private final String mTPId;
+
+            TaskDone(String userId, String TPId) {
+                mUserId = userId;
+                mTPId = TPId;
+            }
+
+            protected void onPreExecute() {
+
+            }
+
+            @Override
+            protected String doInBackground(Void... params) {
+                String urlString = "http://mmcrajawali.com/visited.php?userId=" + mUserId + "&tpId=" + mTPId;
+//            String urlString = "http://mmcrajawali.com/smartbin/public/login?username=" + mEmail + "&password=" + mPassword;
+//            String urlString = "http://mmcrajawali.com/smartbin/public/loginapi?username=" + mEmail + "&password=" + mPassword;
+//            String urlString = "https://maps.googleapis.com/maps/api/directions/json?origin=-6.366026,106.8279491&destination=-6.402457,106.8300367&sensor=false&mode=driving&alternatives=true&key=AIzaSyDjkNXLI4j-k4ZhdSA3WkHxLUyXagm5aH8";
+                JSONParser jParser = new JSONParser();
+                String json = jParser.getJSONFromUrl(urlString);
+                return json;
+            }
+
+            @Override
+            protected void onPostExecute(final String success) {
+
+            }
+
+            @Override
+            protected void onCancelled() {
             }
         }
     }
