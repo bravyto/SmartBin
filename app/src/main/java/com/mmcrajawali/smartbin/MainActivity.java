@@ -3,12 +3,14 @@ package com.mmcrajawali.smartbin;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -46,6 +48,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,8 +121,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         setUpMapIfNeeded();
-        //pake iterasi buat datengin setiap poin
-        //sebelum diiterasi pake djikstra dulu buat ngurutin mana yang didatengin duluan
 
         View mapTouchLayer = findViewById(R.id.map_touch_layer);
         mapTouchLayer.setOnTouchListener(new View.OnTouchListener() {
@@ -192,12 +193,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
-        if (mMap == null) {
+
             // Try to obtain the map from the SupportMapFragment.
             mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
                     .getMap();
             mMap.setMyLocationEnabled(true);
-
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
@@ -231,7 +231,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 });
 
             }
-        }
+
     }
 
     /**
@@ -348,7 +348,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // TODO Auto-generated method stub
             super.onPreExecute();
 //            Log.e("url di async", url);
-            progressDialog = new ProgressDialog(getApplicationContext());
+            progressDialog = new ProgressDialog(MainActivity.this);
             progressDialog.setMessage("Fetching route, Please wait...");
             progressDialog.setIndeterminate(true);
             progressDialog.show();
@@ -379,7 +379,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             mUserId = userId;
         }
 
-        private ProgressDialog progressDialog = new ProgressDialog(getApplicationContext());
+        private ProgressDialog progressDialog = new ProgressDialog(MainActivity.this);
 
         protected void onPreExecute() {
             progressDialog.setMessage("Activating...");
@@ -406,47 +406,54 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         @Override
         protected void onPostExecute(final String success) {
             try {
-                JSONArray point = new JSONArray(stripHtml(success));
-                String idTPA = null;
-                String namaTPA = null;
-                String latTPA = null;
-                String logTPA = null;
-                SharedPreferences sharedPref = getSharedPreferences("app data", Context.MODE_PRIVATE);
-                for (int i = 0; i < point.length(); i++) {
-                    JSONObject e = point.getJSONObject(i);
-                    String role = e.getString("role");
-                    if (role.equals("tpa")) {
-                        idTPA = e.getString("id_tp");
-                        namaTPA = e.getString("name");
-                        latTPA = e.getString("latitude");
-                        logTPA = e.getString("longitude");
-                    } else {
-                        taskList.add(new Task(sharedPref.getString("id", ""), e.getString("id_tp"), e.getString("name"), "tps", Double.parseDouble(e.getString("latitude")), Double.parseDouble(e.getString("longitude"))));
-                        name.add(e.getString("name"));
-                        latitude.add(e.getString("latitude"));
-                        longitude.add(e.getString("longitude"));
-                        LatLng TPS = new LatLng(Double.parseDouble(e.getString("latitude")), Double.parseDouble(e.getString("longitude")));
-                        mMap.addMarker(new MarkerOptions().position(TPS).title(e.getString("name")));
+                JSONObject status = new JSONObject(stripHtml(success));
+                if (status.getString("role").equals("gagal")) {
+                    Snackbar.make(findViewById(R.id.myCoordinatorLayout), "Failed activating",
+                            Snackbar.LENGTH_SHORT)
+                            .show();
+                } else {
+                    JSONArray point = new JSONArray(stripHtml(success));
+                    String idTPA = null;
+                    String namaTPA = null;
+                    String latTPA = null;
+                    String logTPA = null;
+                    SharedPreferences sharedPref = getSharedPreferences("app data", Context.MODE_PRIVATE);
+                    for (int i = 0; i < point.length(); i++) {
+                        JSONObject e = point.getJSONObject(i);
+                        String role = e.getString("role");
+                        if (role.equals("tpa")) {
+                            idTPA = e.getString("id_tp");
+                            namaTPA = e.getString("name");
+                            latTPA = e.getString("latitude");
+                            logTPA = e.getString("longitude");
+                        } else {
+                            taskList.add(new Task(sharedPref.getString("id", ""), e.getString("id_tp"), e.getString("name"), "tps", Double.parseDouble(e.getString("latitude")), Double.parseDouble(e.getString("longitude"))));
+                            name.add(e.getString("name"));
+                            latitude.add(e.getString("latitude"));
+                            longitude.add(e.getString("longitude"));
+                            LatLng TPS = new LatLng(Double.parseDouble(e.getString("latitude")), Double.parseDouble(e.getString("longitude")));
+                            mMap.addMarker(new MarkerOptions().position(TPS).title(e.getString("name")));
+                        }
                     }
-                }
-                taskList.add(new Task(sharedPref.getString("id", ""), idTPA ,namaTPA, "tpa", Double.parseDouble(latTPA), Double.parseDouble(logTPA)));
-                name.add(namaTPA);
-                latitude.add(latTPA);
-                longitude.add(logTPA);
-                mAdapter.notifyDataSetChanged();
+                    taskList.add(new Task(sharedPref.getString("id", ""), idTPA, namaTPA, "tpa", Double.parseDouble(latTPA), Double.parseDouble(logTPA)));
+                    name.add(namaTPA);
+                    latitude.add(latTPA);
+                    longitude.add(logTPA);
+                    mAdapter.notifyDataSetChanged();
 
-                fullSwitch.setVisibility(View.VISIBLE);
-                fullSwitch.setClickable(true);
-                fullSwitch.setChecked(false);
+                    fullSwitch.setVisibility(View.VISIBLE);
+                    fullSwitch.setClickable(true);
+                    fullSwitch.setChecked(false);
 
-                LatLng TPA = new LatLng(Double.parseDouble(latTPA), Double.parseDouble(logTPA));
-                mMap.addMarker(new MarkerOptions().position(TPA).title(namaTPA));
+                    LatLng TPA = new LatLng(Double.parseDouble(latTPA), Double.parseDouble(logTPA));
+                    mMap.addMarker(new MarkerOptions().position(TPA).title(namaTPA));
 
-                for (int j = 0; j < name.size() - 1; j++) {
-                    String urlnya = makeURL(Double.parseDouble((String) latitude.get(j)), Double.parseDouble((String) longitude.get(j)), Double.parseDouble((String) latitude.get(j + 1)), Double.parseDouble((String) longitude.get(j + 1)));
-                    AsyncTask blabla = new connectAsyncTask(urlnya);
-                    Object[] arg = new String[]{null, null, null};
-                    blabla.execute(arg);
+                    for (int j = 0; j < name.size() - 1; j++) {
+                        String urlnya = makeURL(Double.parseDouble((String) latitude.get(j)), Double.parseDouble((String) longitude.get(j)), Double.parseDouble((String) latitude.get(j + 1)), Double.parseDouble((String) longitude.get(j + 1)));
+                        AsyncTask blabla = new connectAsyncTask(urlnya);
+                        Object[] arg = new String[]{null, null, null};
+                        blabla.execute(arg);
+                    }
                 }
 
 
@@ -605,6 +612,73 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             protected void onCancelled() {
             }
+        }
+    }
+
+    public class TaskDone extends AsyncTask<Void, Void, String> {
+
+        private final String mId;
+
+        TaskDone(String id) {
+            mId = id;
+        }
+
+        private Exception exception;
+        private ProgressDialog progressDialog = new ProgressDialog(MainActivity.this);
+        InputStream inputStream = null;
+        String result = "";
+
+        protected void onPreExecute() {
+            progressDialog.setMessage("Fetching Base...");
+            progressDialog.show();
+            progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                public void onCancel(DialogInterface arg0) {
+                    TaskDone.this.cancel(true);
+                }
+            });
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+            String urlString = "http://mmcrajawali.com/taskDone.php?userId=" + mId;
+//            String urlString = "http://mmcrajawali.com/smartbin/public/login?username=" + mEmail + "&password=" + mPassword;
+//            String urlString = "http://mmcrajawali.com/smartbin/public/loginapi?username=" + mEmail + "&password=" + mPassword;
+//            String urlString = "https://maps.googleapis.com/maps/api/directions/json?origin=-6.366026,106.8279491&destination=-6.402457,106.8300367&sensor=false&mode=driving&alternatives=true&key=AIzaSyDjkNXLI4j-k4ZhdSA3WkHxLUyXagm5aH8";
+            JSONParser jParser = new JSONParser();
+            String json = jParser.getJSONFromUrl(urlString);
+            return json;
+        }
+
+        public String stripHtml(String html) {
+            return Html.fromHtml(html).toString();
+        }
+
+        @Override
+        protected void onPostExecute(final String success) {
+            final JSONObject json;
+            try {
+                json = new JSONObject(stripHtml(success));
+                if (json.getString("id_tp").equals("gagal")) {
+                    Snackbar.make(findViewById(R.id.myCoordinatorLayout), "Failed fetching base",
+                            Snackbar.LENGTH_SHORT)
+                            .show();
+                } else {
+                    Location location = mMap.getMyLocation();
+                    String urlnya = makeURL(location.getLatitude(), location.getLongitude(), Double.parseDouble(json.getString("latitude")), Double.parseDouble(json.getString("longitude")));
+                    AsyncTask blabla = new connectAsyncTask(urlnya);
+                    Object[] arg = new String[]{null, null, null};
+                    blabla.execute(arg);
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            progressDialog.cancel();
+        }
+
+        @Override
+        protected void onCancelled() {
+
         }
     }
 }
