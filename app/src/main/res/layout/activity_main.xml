@@ -1,7 +1,8 @@
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="fill_parent">
+    android:layout_height="fill_parent"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -15,19 +16,42 @@
             android:background="?attr/colorPrimary"
             app:layout_scrollFlags="scroll|enterAlways"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
-
-        <android.support.design.widget.TabLayout
-            android:id="@+id/tabs"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:tabIndicatorColor="@color/indicator"
-            app:tabMode="fixed"
-            app:tabGravity="fill"/>
     </android.support.design.widget.AppBarLayout>
 
-    <com.mmcrajawali.smartbin.CustomViewPager
-        android:id="@+id/viewpager"
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="fill_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"  />
+        android:layout_height="match_parent">
+
+        <fragment
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/map"
+            tools:context=".MainActivity"
+            android:layout_weight=".7"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:clickable="true" >
+
+            <FrameLayout
+                android:id="@+id/map_touch_layer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </fragment>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_weight=".6"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="vertical" />
+
+        <Switch
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Full"
+            android:id="@+id/switch2"
+            android:checked="false"
+            android:layout_margin="10dp"/>
+    </LinearLayout>
+
 </android.support.design.widget.CoordinatorLayout>
