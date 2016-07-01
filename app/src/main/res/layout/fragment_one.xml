@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.mmcrajawali.smartbin.TugasFragment">
+    tools:context="com.mmcrajawali.smartbin.MainActivity">
 
     <LinearLayout
         android:orientation="vertical"
@@ -14,7 +14,7 @@
             android:layout_width="match_parent"
             android:layout_height="fill_parent"
             android:id="@+id/map"
-            tools:context=".TugasFragment"
+            tools:context=".MainActivity"
             android:layout_weight=".7"
             android:name="com.google.android.gms.maps.SupportMapFragment"
             android:clickable="true" >
