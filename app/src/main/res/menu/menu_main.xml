@@ -8,22 +8,20 @@
         android:title=""
         app:showAsAction="always"/>
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/action_report"
         android:orderInCategory="100"
-        android:title="Settings"
+        android:title="Lapor"
         app:showAsAction="never" />
-    <!--<item-->
-        <!--android:id="@+id/action_search"-->
-        <!--android:orderInCategory="200"-->
-        <!--android:title="Search"-->
-        <!--android:icon="@drawable/ic_search"-->
-        <!--app:showAsAction="ifRoom"-->
-        <!--&gt;</item>-->
-    <!--<item-->
-        <!--android:id="@+id/action_user"-->
-        <!--android:orderInCategory="300"-->
-        <!--android:title="User"-->
-        <!--android:icon="@drawable/ic_user"-->
-        <!--app:showAsAction="ifRoom"></item>-->
+    <item
+        android:id="@+id/action_rules"
+        android:orderInCategory="100"
+        android:title="Peraturan"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_logout"
+        android:orderInCategory="100"
+        android:title="Logout"
+        app:showAsAction="never" />
+
 
 </menu>
