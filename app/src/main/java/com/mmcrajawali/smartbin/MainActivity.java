@@ -177,7 +177,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
         });
+
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_report:
+                Intent i = new Intent(getApplicationContext(), ReportActivity.class);
+                startActivity(i);
+                return true;
+            case R.id.action_rules:
+                Intent j = new Intent(getApplicationContext(), RulesActivity.class);
+                startActivity(j);
+                return true;
+            case R.id.action_logout:
+                //Kodingan logout disini
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     public void activateTaskInFragment() {
