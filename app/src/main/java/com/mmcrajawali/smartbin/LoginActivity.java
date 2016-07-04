@@ -31,6 +31,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -70,7 +71,9 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
+        SharedPreferences sharedPref= getSharedPreferences("app data", Context.MODE_PRIVATE);
         mEmailView = (EditText) findViewById(R.id.username);
+        mEmailView.setText(sharedPref.getString("username", ""));
         mPasswordView = (EditText) findViewById(R.id.password);
 
 
@@ -93,6 +96,9 @@ public class LoginActivity extends AppCompatActivity {
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(LoginActivity.this.findViewById(R.id.login_page).getWindowToken(), 0);
+
         if (mAuthTask != null) {
             return;
         }
@@ -249,6 +255,8 @@ public class LoginActivity extends AppCompatActivity {
                 SharedPreferences sharedPref = getSharedPreferences("app data", Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putString("id", id);
+                Log.e("idnya", id);
+                editor.putString("username", mEmail);
                 editor.putString("name", name);
                 editor.putString("truck_name", truck_name);
                 editor.putString("truck_number", truck_number);
@@ -260,6 +268,7 @@ public class LoginActivity extends AppCompatActivity {
                 mEmailView.requestFocus();
             }
             progressDialog.cancel();
+            finish();
         }
 
         @Override

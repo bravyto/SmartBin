@@ -16,6 +16,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -40,6 +41,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private List<Task> taskList = new ArrayList<>();
     private TaskAdapter mAdapter;
     private ArrayList name, latitude, longitude;
+    private ArrayList<Marker> marker;
     private Switch fullSwitch;
     private RecyclerView.LayoutManager mLayoutManager;
 
@@ -88,6 +91,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         name = new ArrayList();
         latitude = new ArrayList();
         longitude = new ArrayList();
+        marker = new ArrayList<Marker>();
         routeCounter = 0;
         mapTouched = false;
         mAdapter = new TaskAdapter(taskList);
@@ -96,8 +100,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         //Set toolbar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
-        AppBarLayout.LayoutParams params = (AppBarLayout.LayoutParams) toolbar.getLayoutParams();
-        params.setScrollFlags(0);  // clear all scroll flags
+//        AppBarLayout.LayoutParams params = (AppBarLayout.LayoutParams) toolbar.getLayoutParams();
+//        params.setScrollFlags(0);  // clear all scroll flags
         setSupportActionBar(toolbar);
 
         //Inisialisasi recyclerview
@@ -159,6 +163,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @Override
+    public void onBackPressed() {
+        new AlertDialog.Builder(this).setIcon(android.R.drawable.ic_dialog_alert).setTitle("Exit")
+                .setMessage("Are you sure you want to exit?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                }).setNegativeButton("No", null).show();
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -193,7 +209,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 startActivity(j);
                 return true;
             case R.id.action_logout:
-                //Kodingan logout disini
+                Intent k = new Intent(getApplicationContext(), LoginActivity.class);
+                startActivity(k);
+                finish();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -427,12 +445,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         protected void onPostExecute(final String success) {
             try {
                 JSONObject status = new JSONObject(stripHtml(success));
-                if (status.getString("role").equals("gagal")) {
+                Log.e("status", status.getString("status"));
+                if (status.getString("status").equals("gagal")) {
                     Snackbar.make(findViewById(R.id.myCoordinatorLayout), "Failed activating",
                             Snackbar.LENGTH_SHORT)
                             .show();
                 } else {
-                    JSONArray point = new JSONArray(stripHtml(success));
+                    JSONArray point = status.getJSONArray("tp");
                     String idTPA = null;
                     String namaTPA = null;
                     String latTPA = null;
@@ -443,6 +462,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         String role = e.getString("role");
                         if (role.equals("tpa")) {
                             idTPA = e.getString("id_tp");
+//                            Log.e("budi", idTPA);
                             namaTPA = e.getString("name");
                             latTPA = e.getString("latitude");
                             logTPA = e.getString("longitude");
@@ -466,7 +486,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     fullSwitch.setChecked(false);
 
                     LatLng TPA = new LatLng(Double.parseDouble(latTPA), Double.parseDouble(logTPA));
-                    mMap.addMarker(new MarkerOptions().position(TPA).title(namaTPA));
+
+                    marker.add(mMap.addMarker(new MarkerOptions().position(TPA).title(namaTPA)));
 
                     for (int j = 0; j < name.size() - 1; j++) {
                         String urlnya = makeURL(Double.parseDouble((String) latitude.get(j)), Double.parseDouble((String) longitude.get(j)), Double.parseDouble((String) latitude.get(j + 1)), Double.parseDouble((String) longitude.get(j + 1)));
@@ -565,6 +586,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         blabla.execute(param);
                         ((CheckBox) v).setClickable(false);
                         if (task.getLocation_type().equals("tpa")) {
+                            AsyncTask blibli = new GoHome(task.getDriver_id());
+                            blibli.execute(param);
                             taskList.clear();
                             taskListAdapter.clear();
                             row.clear();
@@ -577,6 +600,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             name.clear();
                             latitude.clear();
                             longitude.clear();
+                            for (int i = 0; i < marker.size(); i++
+                                 ) {
+                                marker.get(i).remove();
+                            }
+                            marker.clear();
                         }
                     }
                 }
@@ -635,11 +663,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public class TaskDone extends AsyncTask<Void, Void, String> {
+    public class GoHome extends AsyncTask<Void, Void, String> {
 
         private final String mId;
 
-        TaskDone(String id) {
+        GoHome(String id) {
             mId = id;
         }
 
@@ -653,7 +681,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             progressDialog.show();
             progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
                 public void onCancel(DialogInterface arg0) {
-                    TaskDone.this.cancel(true);
+                    GoHome.this.cancel(true);
                 }
             });
         }
@@ -684,6 +712,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             .show();
                 } else {
                     Location location = mMap.getMyLocation();
+                    LatLng base = new LatLng(Double.parseDouble(json.getString("latitude")), Double.parseDouble(json.getString("longitude")));
+                    mMap.addMarker(new MarkerOptions().position(base).title("Base"));
                     String urlnya = makeURL(location.getLatitude(), location.getLongitude(), Double.parseDouble(json.getString("latitude")), Double.parseDouble(json.getString("longitude")));
                     AsyncTask blabla = new connectAsyncTask(urlnya);
                     Object[] arg = new String[]{null, null, null};
