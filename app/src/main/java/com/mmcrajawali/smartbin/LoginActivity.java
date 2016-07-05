@@ -263,12 +263,12 @@ public class LoginActivity extends AppCompatActivity {
                 editor.commit();
                 Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(myIntent);
+                finish();
             } else {
                 mEmailView.setError("This username or password is incorrect");
                 mEmailView.requestFocus();
             }
             progressDialog.cancel();
-            finish();
         }
 
         @Override
