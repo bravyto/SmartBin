@@ -100,7 +100,7 @@ public class LoginActivity extends AppCompatActivity {
         imm.hideSoftInputFromWindow(LoginActivity.this.findViewById(R.id.login_page).getWindowToken(), 0);
 
         if (mAuthTask != null) {
-            return;
+            mAuthTask.cancel(true);
         }
 
         // Reset errors.
@@ -135,7 +135,7 @@ public class LoginActivity extends AppCompatActivity {
         } else {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
-            showProgress(true);
+//            showProgress(true);
             mAuthTask = new UserLoginTask(email.replace(" ", "%20"), password.replace(" ", "%20"));
             mAuthTask.execute((Void) null);
         }
@@ -225,18 +225,18 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(final String success) {
             mAuthTask = null;
-            showProgress(false);
+//            showProgress(false);
             final JSONObject json;
-            String status = null, role = null, id = null, name = null, truck_name = null, truck_number = null;
+            String status = null, role = null, id = null, name = null, truck_name = null, truck_number = null, truck_status = null;
             try {
                 json = new JSONObject(stripHtml(success));
-                Log.e("statusnya", success);
+//                Log.e("statusnya", success);
                 String encodedString = json.getString("status");
                 status = encodedString;
-                Log.e("statusnya", status);
+//                Log.e("statusnya", status);
                 encodedString = json.getString("role");
                 role = encodedString;
-                Log.e("rolenya", role);
+//                Log.e("rolenya", role);
                 if(role.equals("supir_truk")) {
                     encodedString = json.getString("id_user");
                     id = encodedString;
@@ -246,20 +246,24 @@ public class LoginActivity extends AppCompatActivity {
                     truck_name = encodedString;
                     encodedString = json.getString("nomor_truk");
                     truck_number = encodedString;
+                    encodedString = json.getString("status_truk");
+                    truck_status = encodedString;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
+            if (role != null)
             if (status.equals("sukses") && role.equals("supir_truk")) {
                 SharedPreferences sharedPref = getSharedPreferences("app data", Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putString("id", id);
-                Log.e("idnya", id);
+//                Log.e("idnya", id);
                 editor.putString("username", mEmail);
                 editor.putString("name", name);
                 editor.putString("truck_name", truck_name);
                 editor.putString("truck_number", truck_number);
+                editor.putString("truck_status", truck_status);
                 editor.commit();
                 Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(myIntent);
@@ -268,13 +272,18 @@ public class LoginActivity extends AppCompatActivity {
                 mEmailView.setError("This username or password is incorrect");
                 mEmailView.requestFocus();
             }
+            else {
+                mEmailView.setError("This username or password is incorrect");
+                mEmailView.requestFocus();
+            }
             progressDialog.cancel();
         }
 
         @Override
         protected void onCancelled() {
+            mAuthTask.cancel(true);
             mAuthTask = null;
-            showProgress(false);
+//            showProgress(false);
         }
     }
 }

@@ -5,16 +5,21 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -27,6 +32,7 @@ import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -124,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        setUpMapIfNeeded();
 
         View mapTouchLayer = findViewById(R.id.map_touch_layer);
         mapTouchLayer.setOnTouchListener(new View.OnTouchListener() {
@@ -142,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fullSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked) {
+                if (isChecked) {
                     for (int i = 0; i < polylinesnya.size(); i++) {
                         polylinesnya.get(i).remove();
                     }
@@ -158,8 +163,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-
-
     }
 
     @Override
@@ -174,13 +177,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }).setNegativeButton("No", null).show();
     }
 
+    private boolean alreadyActivated;
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         MenuItem item = menu.findItem(R.id.myswitch);
         item.setActionView(R.layout.switch_layout);
-
+        alreadyActivated = false;
         final SwitchCompat actionView = (SwitchCompat) item.getActionView().findViewById(R.id.switchForActionBar);
 
         actionView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -188,11 +193,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(isChecked) {
-                    activateTaskInFragment();
-                    actionView.setClickable(false);
+                    if (activateTaskInFragment())
+                        actionView.setClickable(false);
+                    else {
+                        if (alreadyActivated) {
+                            actionView.setChecked(true);
+                            actionView.setClickable(false);
+                        } else
+                            actionView.setChecked(false);
+                    }
                 }
             }
         });
+
+        setUpMapIfNeeded();
+
+        SharedPreferences sharedPreferences = getSharedPreferences("app data", Context.MODE_PRIVATE);
+        if(!sharedPreferences.getString("truck_status", "").equals("idle") && mMap != null) {
+            alreadyActivated = true;
+            actionView.setChecked(true);
+        }
 
         return true;
     }
@@ -218,15 +238,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public void activateTaskInFragment() {
+    public boolean activateTaskInFragment() {
+
         Location location = mMap.getMyLocation();
-        name.add("My Position");
-        latitude.add(location.getLatitude() + "");
-        longitude.add(location.getLongitude() + "");
-        SharedPreferences sharedPref= getSharedPreferences("app data", Context.MODE_PRIVATE);
-        AsyncTask activateTask = new ActivateTask(sharedPref.getString("id", ""));
-        Void[] param = null;
-        activateTask.execute(param);
+        if (location != null) {
+            name.add("My Position");
+            latitude.add(location.getLatitude() + "");
+            longitude.add(location.getLongitude() + "");
+            SharedPreferences sharedPref = getSharedPreferences("app data", Context.MODE_PRIVATE);
+            AsyncTask activateTask = new ActivateTask(sharedPref.getString("id", ""));
+            Void[] param = null;
+            activateTask.execute(param);
+            return true;
+        } else {
+                Snackbar.make(findViewById(R.id.myCoordinatorLayout), "Cannot find GPS signal",
+                        Snackbar.LENGTH_SHORT)
+                        .show();
+            return false;
+        }
     }
 
     private void setUpMapIfNeeded() {
@@ -242,10 +271,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public boolean onMyLocationButtonClick() {
                         Location location = mMap.getMyLocation();
-                        LatLng myPosition = new LatLng(location.getLatitude(), location.getLongitude());
+                        if (location != null) {
+                            LatLng myPosition = new LatLng(location.getLatitude(), location.getLongitude());
 
-                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(myPosition.latitude, myPosition.longitude), 17.0f));
-                        autoRecenter = true;
+                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(myPosition.latitude, myPosition.longitude), 17.0f));
+                            autoRecenter = true;
+                        } else {
+                            Snackbar.make(findViewById(R.id.myCoordinatorLayout), "Cannot find GPS signal",
+                                    Snackbar.LENGTH_SHORT)
+                                    .show();
+                        }
                         return true;
                     }
                 });
@@ -257,14 +292,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         // TODO Auto-generated method stub
                         //send position to website
                         LatLng myPosition = new LatLng(arg0.getLatitude(), arg0.getLongitude());
-                        if(autoRecenter) {
+                        if (autoRecenter) {
                             //mMap.addMarker(new MarkerOptions().position(myPosition).title("It's Me!"));
                             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(myPosition.latitude, myPosition.longitude), 17.0f));
                         }
                         SharedPreferences sharedPref = getSharedPreferences("app data", Context.MODE_PRIVATE);
-                        AsyncTask updatePos = new UpdateTask(sharedPref.getString("id", ""),arg0.getLatitude()+"",arg0.getLongitude()+"");
+                        AsyncTask updatePos = new UpdateTask(sharedPref.getString("id", ""), arg0.getLatitude() + "", arg0.getLongitude() + "");
                         Void[] param = null;
                         updatePos.execute(param);
+                        if (alreadyActivated)
+                            if (activateTaskInFragment())
+                                alreadyActivated = false;
                     }
                 });
 
