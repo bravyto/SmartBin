@@ -1,36 +1,40 @@
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/myCoordinatorLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     xmlns:tools="http://schemas.android.com/tools"
     android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
-
-    <!--<android.support.design.widget.AppBarLayout-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="fill_parent"-->
-        <!--android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">-->
-
-
-
-        <LinearLayout
-            android:orientation="vertical"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="fill_parent">
-            <android.support.v7.widget.Toolbar
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorPrimary"
-                app:layout_scrollFlags="scroll|enterAlways"
-                app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:layout_scrollFlags="scroll|enterAlways"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+            android:elevation="4dp" />
+    </LinearLayout>
+
+    <android.support.percent.PercentRelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <FrameLayout
+            android:id="@+id/frame1"
+            app:layout_heightPercent="50%"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:elevation="4dp">
             <fragment
                 android:layout_width="match_parent"
-                android:layout_height="fill_parent"
-                android:layout_gravity="bottom"
+                android:layout_height="wrap_content"
                 android:id="@+id/map"
                 tools:context=".MainActivity"
-                android:layout_weight=".7"
                 android:name="com.google.android.gms.maps.SupportMapFragment"
                 android:clickable="true" >
 
@@ -39,31 +43,70 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
             </fragment>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/frame2"
+            android:layout_below="@+id/frame1"
+            app:layout_heightPercent="40%"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:background="@color/material_grey_300">
+
             <LinearLayout
-                android:orientation="vertical"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/colorPrimary">
-                <android.support.v7.widget.RecyclerView
-                    android:id="@+id/recycler_view"
-                    android:layout_weight=".6"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:scrollbars="vertical"
-                    android:background="@color/colorPrimary"/>
-
-                <Switch
+                    android:orientation="vertical"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:background="#FFFFFF"
+                    android:elevation="4dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Daftar Lokasi"
+                        android:id="@+id/textView"
+                        android:textColor="#000000"
+                        android:layout_margin="10dp"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Full"
-                    android:id="@+id/switch2"
-                    android:checked="false"
-                    android:layout_margin="10dp"
-                    android:background="@color/colorPrimary"/>
+                    android:orientation="vertical">
+                    <android.support.v7.widget.RecyclerView
+                        android:id="@+id/recycler_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="vertical"
+                        android:background="#FFFFFF"
+                        android:layout_marginBottom="5dp"
+                        android:elevation="4dp" />
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
 
-    <!--</android.support.design.widget.AppBarLayout>-->
-
-
-</android.support.design.widget.CoordinatorLayout>
+        </FrameLayout>
+        <FrameLayout
+            android:layout_below="@+id/frame2"
+            app:layout_heightPercent="10%"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:background="@color/material_grey_600">
+            <Switch
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Kapasitas Truk Penuh"
+                android:id="@+id/switch2"
+                android:checked="false"
+                android:layout_gravity="center"
+                android:layout_margin="10dp"
+                android:textSize="16sp"
+                android:padding="5dp" />
+        </FrameLayout>
+    </android.support.percent.PercentRelativeLayout>
+</LinearLayout>
