@@ -5,22 +5,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.Snackbar;
-import android.support.design.widget.TabLayout;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -32,7 +21,6 @@ import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -41,7 +29,6 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -152,21 +139,40 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    for (int i = 0; i < polylinesnya.size(); i++) {
-                        polylinesnya.get(i).remove();
-                    }
-                    polylinesnya.clear();
-                    Location location = mMap.getMyLocation();
-                    String urlnya = makeURL(location.getLatitude(), location.getLongitude(), Double.parseDouble((String) latitude.get(latitude.size() - 1)), Double.parseDouble((String) longitude.get(longitude.size() - 1)));
-                    AsyncTask blabla = new connectAsyncTask(urlnya);
-                    Object[] arg = new String[]{null, null, null};
-                    blabla.execute(arg);
-                    fullSwitch.setClickable(false);
-                    mAdapter.setTaskClickable(false);
+                    FullCapacityDialog();
                 }
             }
         });
 
+    }
+
+    private void FullCapacityDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Kapasitas Penuh");
+        builder.setMessage("Apakah Anda yakin truk sudah penuh?");
+        builder.setPositiveButton("Ya", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                for (int i = 0; i < polylinesnya.size(); i++) {
+                    polylinesnya.get(i).remove();
+                }
+                polylinesnya.clear();
+                Location location = mMap.getMyLocation();
+                String urlnya = makeURL(location.getLatitude(), location.getLongitude(), Double.parseDouble((String) latitude.get(latitude.size() - 1)), Double.parseDouble((String) longitude.get(longitude.size() - 1)));
+                AsyncTask blabla = new connectAsyncTask(urlnya);
+                Object[] arg = new String[]{null, null, null};
+                blabla.execute(arg);
+                fullSwitch.setClickable(false);
+                mAdapter.setTaskClickable(false);
+                dialog.dismiss();
+            }
+        });
+        builder.setNegativeButton("Tidak", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.dismiss();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     @Override
