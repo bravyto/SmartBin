@@ -42,7 +42,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="text"
-                android:id="@+id/title_report" />
+                android:id="@+id/title_report"
+                android:theme="@style/MyEditTextTheme" />
 
 
 
@@ -69,7 +70,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textMultiLine"
-                android:id="@+id/description_report"/>
+                android:id="@+id/description_report"
+                android:theme="@style/MyEditTextTheme"/>
 
         </LinearLayout>
 
