@@ -628,32 +628,44 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 @Override
                 public void onClick(View v) {
-                    if (((CheckBox) v).isChecked()) {
-                        AsyncTask blabla = new TaskDone(task.getDriver_id(), task.getLocationId());
-                        Void[] param = null;
-                        blabla.execute(param);
-                        ((CheckBox) v).setClickable(false);
-                        if (task.getLocation_type().equals("tpa")) {
-                            AsyncTask blibli = new GoHome(task.getDriver_id());
-                            blibli.execute(param);
-                            taskList.clear();
-                            taskListAdapter.clear();
-                            row.clear();
-                            mAdapter.notifyDataSetChanged();
-                            fullSwitch.setVisibility(View.GONE);
-                            for (int i = 0; i < polylinesnya.size(); i++) {
-                                polylinesnya.get(i).remove();
+                    Location recent = mMap.getMyLocation();
+                    Location tp_loc = new Location("");
+                    tp_loc.setLatitude(task.getLocation_latitude());
+                    tp_loc.setLongitude(task.getLocation_longitude());
+                    Log.e("jaraknya", recent.distanceTo(tp_loc) + "");
+                    if (recent.distanceTo(tp_loc) < 20) {
+                        if (((CheckBox) v).isChecked()) {
+                            AsyncTask blabla = new TaskDone(task.getDriver_id(), task.getLocationId());
+                            Void[] param = null;
+                            blabla.execute(param);
+                            ((CheckBox) v).setClickable(false);
+                            if (task.getLocation_type().equals("tpa")) {
+                                AsyncTask blibli = new GoHome(task.getDriver_id());
+                                blibli.execute(param);
+                                taskList.clear();
+                                taskListAdapter.clear();
+                                row.clear();
+                                mAdapter.notifyDataSetChanged();
+                                fullSwitch.setVisibility(View.GONE);
+                                for (int i = 0; i < polylinesnya.size(); i++) {
+                                    polylinesnya.get(i).remove();
+                                }
+                                polylinesnya.clear();
+                                name.clear();
+                                latitude.clear();
+                                longitude.clear();
+                                for (int i = 0; i < marker.size(); i++
+                                        ) {
+                                    marker.get(i).remove();
+                                }
+                                marker.clear();
                             }
-                            polylinesnya.clear();
-                            name.clear();
-                            latitude.clear();
-                            longitude.clear();
-                            for (int i = 0; i < marker.size(); i++
-                                 ) {
-                                marker.get(i).remove();
-                            }
-                            marker.clear();
                         }
+                    } else {
+                        Snackbar.make(findViewById(R.id.myCoordinatorLayout), "You are too far from that location",
+                                Snackbar.LENGTH_SHORT)
+                                .show();
+                        ((CheckBox) v).setChecked(false);
                     }
                 }
             });
