@@ -344,13 +344,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         urlString.append(Double.toString(sourcelat));
         urlString.append(",");
         urlString
-                .append(Double.toString( sourcelog));
+                .append(Double.toString(sourcelog));
         urlString.append("&destination=");// to
         urlString
                 .append(Double.toString(destlat));
         urlString.append(",");
         urlString.append(Double.toString(destlog));
-        urlString.append("&sensor=false&mode=driving&alternatives=true");
+        urlString.append("&sensor=false&mode=driving&alternatives=true&avoidHighways=true");
         urlString.append("&key=AIzaSyDjkNXLI4j-k4ZhdSA3WkHxLUyXagm5aH8");
         return urlString.toString();
     }
