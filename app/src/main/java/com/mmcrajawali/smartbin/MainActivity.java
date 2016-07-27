@@ -662,7 +662,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             }
                         }
                     } else {
-                        Snackbar.make(findViewById(R.id.myCoordinatorLayout), "You are too far from that location",
+                        Snackbar.make(findViewById(R.id.myCoordinatorLayout), "Posisi Anda terlalu jauh dari lokasi tersebut",
                                 Snackbar.LENGTH_SHORT)
                                 .show();
                         ((CheckBox) v).setChecked(false);
