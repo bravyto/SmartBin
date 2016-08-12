@@ -456,6 +456,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    int counter = 0;
+
     public class ActivateTask extends AsyncTask<Void, Void, String> {
 
         private final String mUserId;
@@ -537,17 +539,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     marker.add(mMap.addMarker(new MarkerOptions().position(TPA).title(namaTPA)));
 
-                    for (int j = 0; j < name.size() - 1; j++) {
-                        String urlnya = makeURL(Double.parseDouble((String) latitude.get(j)), Double.parseDouble((String) longitude.get(j)), Double.parseDouble((String) latitude.get(j + 1)), Double.parseDouble((String) longitude.get(j + 1)));
+                        String urlnya = makeURL(Double.parseDouble((String) latitude.get(counter)), Double.parseDouble((String) longitude.get(counter)), Double.parseDouble((String) latitude.get(counter + 1)), Double.parseDouble((String) longitude.get(counter + 1)));
                         AsyncTask blabla = new connectAsyncTask(urlnya);
                         Object[] arg = new String[]{null, null, null};
                         blabla.execute(arg);
-                    }
+                        counter++;
                 }
 
 
             } catch (JSONException e) {
                 e.printStackTrace();
+                Snackbar.make(findViewById(R.id.myCoordinatorLayout), "No Connection",
+                        Snackbar.LENGTH_SHORT)
+                        .show();
             }
             progressDialog.cancel();
         }
@@ -659,6 +663,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     marker.get(i).remove();
                                 }
                                 marker.clear();
+                            } else {
+                                String urlnya = makeURL(Double.parseDouble((String) latitude.get(counter)), Double.parseDouble((String) longitude.get(counter)), Double.parseDouble((String) latitude.get(counter + 1)), Double.parseDouble((String) longitude.get(counter + 1)));
+                                AsyncTask blibambi = new connectAsyncTask(urlnya);
+                                Object[] arg = new String[]{null, null, null};
+                                blibambi.execute(arg);
+                                counter++;
                             }
                         }
                     } else {
@@ -781,6 +791,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
+                Snackbar.make(findViewById(R.id.myCoordinatorLayout), "No Connection",
+                        Snackbar.LENGTH_SHORT)
+                        .show();
             }
 
             progressDialog.cancel();

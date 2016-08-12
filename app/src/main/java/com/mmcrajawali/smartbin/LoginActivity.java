@@ -249,32 +249,37 @@ public class LoginActivity extends AppCompatActivity {
                     encodedString = json.getString("status_truk");
                     truck_status = encodedString;
                 }
+
+
+
+                if (role != null)
+                    if (status.equals("sukses") && role.equals("supir_truk")) {
+                        SharedPreferences sharedPref = getSharedPreferences("app data", Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedPref.edit();
+                        editor.putString("id", id);
+                        //                Log.e("idnya", id);
+                        editor.putString("username", mEmail);
+                        editor.putString("name", name);
+                        editor.putString("truck_name", truck_name);
+                        editor.putString("truck_number", truck_number);
+                        editor.putString("truck_status", truck_status);
+                        editor.commit();
+                        Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
+                        startActivity(myIntent);
+                        finish();
+                    } else {
+                        mEmailView.setError("This username or password is incorrect");
+                        mEmailView.requestFocus();
+                    }
+                else {
+                    mEmailView.setError("This username or password is incorrect");
+                    mEmailView.requestFocus();
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
-            }
-
-            if (role != null)
-            if (status.equals("sukses") && role.equals("supir_truk")) {
-                SharedPreferences sharedPref = getSharedPreferences("app data", Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putString("id", id);
-//                Log.e("idnya", id);
-                editor.putString("username", mEmail);
-                editor.putString("name", name);
-                editor.putString("truck_name", truck_name);
-                editor.putString("truck_number", truck_number);
-                editor.putString("truck_status", truck_status);
-                editor.commit();
-                Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
-                startActivity(myIntent);
-                finish();
-            } else {
-                mEmailView.setError("This username or password is incorrect");
-                mEmailView.requestFocus();
-            }
-            else {
-                mEmailView.setError("This username or password is incorrect");
-                mEmailView.requestFocus();
+                Snackbar.make(findViewById(R.id.login_page), "No Connection",
+                        Snackbar.LENGTH_SHORT)
+                        .show();
             }
             progressDialog.cancel();
         }
